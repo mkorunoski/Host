@@ -3,11 +3,6 @@
 #include <QDateTime>
 #include <QDir>
 
-#ifdef unix
-#include "was/storage_account.h"
-#include "was/file.h"
-#endif
-
 Host::Host(const QString &address, int port, const QString &dataFolderLocation, int maxNumFiles, QObject *parent)
     : QObject(parent),
       mDataFolderLocation(dataFolderLocation)
@@ -28,21 +23,6 @@ Host::Host(const QString &address, int port, const QString &dataFolderLocation, 
 
     mFilesPtr = new Files(maxNumFiles);
     mFilesPtr->newFile(newFilename().toStdString());
-
-#ifdef unix
-    // Define the connection-string with your values.
-    const utility::string_t storage_connection_string(U("DefaultEndpointsProtocol=https;AccountName=your_storage_account;AccountKey=your_storage_account_key"));
-    // Retrieve storage account from connection string.
-    azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(storage_connection_string);
-    // Create the Azure Files client.
-    azure::storage::cloud_file_client file_client = storage_account.create_cloud_file_client();
-    // Get a reference to the file share
-    azure::storage::cloud_file_share share = file_client.get_share_reference(_XPLATSTR("my-sample-share"));
-    if (share.create_if_not_exists())
-    {
-        std::wcout << U("New share created") << std::endl;
-    }
-#endif
 }
 
 Host::~Host()

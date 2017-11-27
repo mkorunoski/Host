@@ -21,7 +21,7 @@ void Files::newFile(const std::string &filename)
 
 void Files::write(double value)
 {
-    mCurrFile << value << std::endl;
+    mCurrFile << value << std::endl;t
 }
 
 std::string Files::currFilename()
