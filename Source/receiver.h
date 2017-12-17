@@ -5,6 +5,7 @@
 #include <QMediaPlayer>
 #include <QAudioProbe>
 #include <QList>
+#include <QByteArray>
 
 class Receiver : public QObject
 {
@@ -12,7 +13,6 @@ class Receiver : public QObject
 
 public:
     Receiver(const QString &, QObject *parent = nullptr);
-    ~Receiver();
 
     void receive();
 
@@ -23,18 +23,22 @@ signals:
     void dataReady(QList<double>);
 
 private:
+    void calc();
+
     static const quint8 sMaxNumData;
     static const quint16 sMaxNumLinesPerFile;
 
     quint8 mCurrNumData;
     quint16 mCurrNumFileLines;
 
+    int mBufferSzMul;
+
     double mSumData;
     QList<double> mData;
 
-    QMediaPlayer *mMediaPlayerPtr;
-    QAudioProbe *mAudioProbePtr;
-
+    QScopedPointer<QMediaPlayer> mMediaPlayerPtr;
+    QScopedPointer<QAudioProbe> mAudioProbePtr;
+    QScopedPointer<QByteArray> mArrayPtr;
 };
 
 #endif // RECEIVER_H

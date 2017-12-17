@@ -1,4 +1,4 @@
-QT += multimedia network
+QT += charts multimedia network
 QT -= gui
 
 CONFIG += c++11 console
@@ -26,9 +26,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += main.cpp \
     host.cpp \
     receiver.cpp \
-    files.cpp
+    files.cpp \
+    experiment.cpp
 
 HEADERS += \
     host.h \
     receiver.h \
-    files.h
+    files.h \
+    experiment.h

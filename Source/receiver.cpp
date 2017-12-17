@@ -1,8 +1,12 @@
 #include "receiver.h"
 
+#include <ctime>
+
 #include <QAudioBuffer>
 #include <QDateTime>
 #include <QDebug>
+
+#include "experiment.h"
 
 const quint8 Receiver::sMaxNumData          = 32;
 const quint16 Receiver::sMaxNumLinesPerFile = 512;
@@ -11,22 +15,18 @@ Receiver::Receiver(const QString &mediaLocation, QObject *parent)
     : QObject(parent),
       mCurrNumData(0),
       mCurrNumFileLines(0),
-      mSumData(0)
+      mBufferSzMul(Experiment::instance()->bufferSzMul()),
+      mSumData(0),
+      mMediaPlayerPtr(new QMediaPlayer(this)),
+      mAudioProbePtr(new QAudioProbe(this)),
+      mArrayPtr(new QByteArray)
 {
-    mMediaPlayerPtr = new QMediaPlayer(this);
     mMediaPlayerPtr->setMedia(QUrl(mediaLocation));
     mMediaPlayerPtr->setVolume(0);
 
-    mAudioProbePtr = new QAudioProbe(this);
-    mAudioProbePtr->setSource(mMediaPlayerPtr);
+    mAudioProbePtr->setSource(mMediaPlayerPtr.data());
 
-    connect(mAudioProbePtr, SIGNAL(audioBufferProbed(QAudioBuffer)), this, SLOT(onAudioBufferProbed(QAudioBuffer)), Qt::QueuedConnection);
-}
-
-Receiver::~Receiver()
-{
-    delete mAudioProbePtr;
-    delete mMediaPlayerPtr;
+    connect(mAudioProbePtr.data(), SIGNAL(audioBufferProbed(QAudioBuffer)), this, SLOT(onAudioBufferProbed(QAudioBuffer)), Qt::QueuedConnection);
 }
 
 void Receiver::receive()
@@ -36,12 +36,31 @@ void Receiver::receive()
 
 void Receiver::onAudioBufferProbed(QAudioBuffer audioBuffer)
 {
-    const qint32 *data = audioBuffer.constData<qint32>();
-    const int size = sizeof(qint32);
+    mArrayPtr->append(QByteArray(audioBuffer.constData<char>(), audioBuffer.byteCount()));
 
-    for (int byte = 0; byte < audioBuffer.byteCount() / size; byte += size)
+    if (mBufferSzMul-- < 0)
     {
-        mSumData += (double) data[byte];
+        auto start = std::clock();
+        calc();
+        auto stop  = std::clock();
+
+        mArrayPtr.reset(new QByteArray);
+
+        auto execTime = (stop - start) / (double) CLOCKS_PER_SEC * 1000;
+        Experiment::instance()->addExecTimeCurrTest(execTime);
+        mBufferSzMul = Experiment::instance()->bufferSzMul();
+
+        Experiment::instance()->nextRun();
+        if (Experiment::instance()->isLastRun())
+            Experiment::instance()->newTest();
+    }
+}
+
+void Receiver::calc()
+{
+    for (auto it = mArrayPtr->cbegin(); it != mArrayPtr->cend(); ++it)
+    {
+        mSumData += (double) *it;
 
         ++mCurrNumData %= sMaxNumData;
         if (mCurrNumData == 0)
@@ -54,6 +73,7 @@ void Receiver::onAudioBufferProbed(QAudioBuffer audioBuffer)
             {
                 emit dataReady(mData);
                 mData.clear();
+                break;
             }
         }
     }

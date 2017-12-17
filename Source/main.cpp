@@ -1,4 +1,4 @@
-#include <QCoreApplication>
+#include <QApplication>
 #include <QSettings>
 #include <QDir>
 
@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+    QApplication a(argc, argv);
 
     QSettings settings(QDir::currentPath().append("/config.ini"), QSettings::IniFormat);
     settings.beginGroup("Configuration parameters");
@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
         int port                   = settings.value("port").toInt();
         QString dataFolderLocation = settings.value("dataFolderLocation").toString();
         int maxNumFiles            = settings.value("maxNumFiles").toInt();
-        QString mediaLocation      = settings.value("mediaLocation").toString();
+        QString mediaLocation      = settings.value("mediaLocation2").toString();
     settings.endGroup();
 
     Host host(address, port, dataFolderLocation, maxNumFiles);

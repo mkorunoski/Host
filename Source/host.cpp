@@ -1,7 +1,11 @@
 #include "host.h"
 
+#include <QApplication>
 #include <QDateTime>
 #include <QDir>
+#include <QStringRef>
+
+#include "experiment.h"
 
 Host::Host(const QString &address, int port, const QString &dataFolderLocation, int maxNumFiles, QObject *parent)
     : QObject(parent),
@@ -23,6 +27,8 @@ Host::Host(const QString &address, int port, const QString &dataFolderLocation, 
 
     mFilesPtr = new Files(maxNumFiles);
     mFilesPtr->newFile(newFilename().toStdString());
+
+    connect(Experiment::instance(), SIGNAL(experimentEnds()), this, SLOT(onExperimentEnds()));
 }
 
 Host::~Host()
@@ -36,7 +42,7 @@ Host::~Host()
 void Host::receive(const QString &mediaLocation)
 {
     mReceiverPtr = new Receiver(mediaLocation, this);
-    connect(mReceiverPtr, SIGNAL(dataReady(QList<double>)), this, SLOT(onDataReady(QList<double>)));
+    connect(mReceiverPtr, SIGNAL(dataReady(QList<double>)), this, SLOT(onDataReady(QList<double>)), Qt::QueuedConnection);
 
     mReceiverPtr->receive();
 }
@@ -52,7 +58,7 @@ void Host::onDataReady(QList<double> data)
     {
         mSocketPtr->write(mFilesPtr->currFilename().c_str());
         mSocketPtr->flush();
-    }
+    }    
 
     mFilesPtr->newFile(newFilename().toStdString());
 }
@@ -65,6 +71,12 @@ void Host::onConnected()
 void Host::onDisconnected()
 {
     qInfo() << "Disconnected!";
+}
+
+void Host::onExperimentEnds()
+{
+    Experiment::instance()->saveResults(mDataFolderLocation);
+    QApplication::exit();
 }
 
 void Host::initHostName()
@@ -84,7 +96,7 @@ void Host::initHostName()
 
 QString Host::newFilename()
 {
-    QString currDateTime    = QDateTime::currentDateTime().toString("ddMMyyyyhhmmss");
+    QString currDateTime    = QDateTime::currentDateTime().toString("ddMMyyyyhhmmsszzz");
     QString filename        = mHostName + currDateTime + ".txt";
     QString newFilelocation = mDataFolderLocation + filename;
 

@@ -21,6 +21,7 @@ public slots:
     void onDataReady(QList<double>);
     void onConnected();
     void onDisconnected();
+    void onExperimentEnds();
 
 private:
     void initHostName();
