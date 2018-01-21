@@ -67,8 +67,14 @@ double Test::averageExecTime() const
 
 void Test::saveResults(const QString &fileName) const
 {
-    Graph graph(QString("Execution time for %1-tuple buffer size").arg(mBufferSize), mExecTimes);
-    graph.saveAsImage(fileName);
+    QFile file(fileName);
+    file.open(QFile::WriteOnly);
+    QTextStream stream(&file);
+    for (double val : mExecTimes)
+        stream << val << "\n";
+
+//    Graph graph(QString("Execution time for %1-tuple buffer size").arg(mBufferSize), mExecTimes);
+//    graph.saveAsImage(fileName);
 }
 
 Experiment* Experiment::mInstancePtr = new Experiment;
@@ -123,15 +129,25 @@ void Experiment::addExecTimeCurrTest(double execTime)
 
 void Experiment::saveResults(const QString &location) const
 {
-    QList<double> averageTimes;
+    QFile file(location + QString("/graph_average.txt"));
+    file.open(QFile::WriteOnly);
+    QTextStream stream(&file);
     int i = 1;
     for (auto it = mTests.cbegin(); it != mTests.cend(); ++it)
     {
-        it->saveResults(location + QString("/graph_%1.png").arg(i++));
-        averageTimes.append(it->averageExecTime());
+        it->saveResults(location + QString("/graph_%1.txt").arg(i++));
+        stream << it->averageExecTime() << "\n";
     }
-    Graph graph(QString("Average execution time for variable buffer length"), averageTimes);
-    graph.saveAsImage(location + QString("/graph_average.png"));
+
+//    QList<double> averageTimes;
+//    int i = 1;
+//    for (auto it = mTests.cbegin(); it != mTests.cend(); ++it)
+//    {
+//        it->saveResults(location + QString("/graph_%1.png").arg(i++));
+//        averageTimes.append(it->averageExecTime());
+//    }
+//    Graph graph(QString("Average execution time for variable buffer length"), averageTimes);
+//    graph.saveAsImage(location + QString("/graph_average.png"));
 }
 
 Experiment::Experiment(QObject *parent)

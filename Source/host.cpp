@@ -58,7 +58,7 @@ void Host::onDataReady(QList<double> data)
     {
         mSocketPtr->write(mFilesPtr->currFilename().c_str());
         mSocketPtr->flush();
-    }    
+    }
 
     mFilesPtr->newFile(newFilename().toStdString());
 }
